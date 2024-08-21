@@ -1,0 +1,57 @@
+{
+	"name": "correct-another-quotation-mark",
+	"description": "When you modify one of the quotation marks, synchronize the modification of the other.",
+	"author": "chuhezhe0807",
+	"license": "MIT",
+	"version": "1.0.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/chuhezhe0807/vscode-extension-correct-another-quotation-mark"
+	},
+	"publisher": "chuhezhe0807",
+	"categories": [],
+	"keywords": [
+		"quotation marks"
+	],
+	"engines": {
+		"vscode": "^1.75.0"
+	},
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Correct Another Quotation Mark configuration",
+			"properties": {
+				"correct-another-quotation-mark.activationOnLanguage": {
+					"type": "array",
+					"default": [
+					  "*"
+					],
+					"description": "Set the languages that the extension will be activated.  e.g. [\"html\",\"xml\",\"php\"] By default, it is [\"*\"] and will be activated for all languages.",
+					"scope": "resource"
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
+		"postinstall": "cd client && pnpm install && cd ../server && pnpm install && cd ..",
+		"test": "vitest --run"
+	},
+	"devDependencies": {
+		"@types/mocha": "^10.0.6",
+		"@types/node": "^18.14.6",
+		"@typescript-eslint/eslint-plugin": "^7.1.0",
+		"@typescript-eslint/parser": "^7.1.0",
+		"eslint": "^8.57.0",
+		"mocha": "^10.3.0",
+		"typescript": "^5.3.3",
+		"vitest": "^2.0.5"
+	}
+}
