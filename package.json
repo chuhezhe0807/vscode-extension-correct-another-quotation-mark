@@ -19,7 +19,7 @@
 	"activationEvents": [
 		"onStartupFinished"
 	],
-	"main": "./client/out/extension",
+	"main": "./client/out/Extension",
 	"contributes": {
 		"configuration": {
 			"type": "object",
@@ -27,9 +27,7 @@
 			"properties": {
 				"correct-another-quotation-mark.activationOnLanguage": {
 					"type": "array",
-					"default": [
-					  "*"
-					],
+					"default": ["javascript", "typescript", "java"],
 					"description": "Set the languages that the extension will be activated.  e.g. [\"html\",\"xml\",\"php\"] By default, it is [\"*\"] and will be activated for all languages.",
 					"scope": "resource"
 				}
