@@ -60,6 +60,11 @@ export default class JavaScriptRequestHandler implements RequestHandler {
 	 */
 	private parseLiteral(node: Node, offset: number, lineText: string, quoteMark: string, 
 	   lineIndex: number, result: Result[]) {
+		// 没有添加过才进来，防止同时命中 Literal 和 TemplateLiteral
+		if(result.findIndex(res => res.lineIndex === lineIndex) !== -1) {
+			return;
+		}
+
 		const {start, end} = node || {};
 
 		if((start != null && end != null) && 

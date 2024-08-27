@@ -122,7 +122,6 @@ function setupActiveTextEditorChangeListener() {
  * 设置 onDidChangeTextDocument 监听事件
  * 
  * TODO 监听 undo redo 事件，并对此作出处理
- * TODO 多个修改同时需要替换时还有问题
  */
 function setupChangeListener() {
     if (changeListener) {
@@ -164,9 +163,12 @@ function setupChangeListener() {
 		}
       }
 
-	  setDocContentsMap(document, document.getText());
-	  const result = await client.sendRequest(CORRECT_REQUEST_TYPE, quotationMarks);
-	  applyResult(result, document);
+	  if(quotationMarks.length > 0) {
+		setDocContentsMap(document, document.getText());
+		const sortedQuotationMarks = quotationMarks.sort((a, b) => a.lineIndex - b.lineIndex);
+		const result = await client.sendRequest(CORRECT_REQUEST_TYPE, sortedQuotationMarks);
+		applyResult(result, document);
+	  }
     });
   };
 
@@ -180,12 +182,12 @@ function applyResult(result: Result[], textDocument: TextDocument) {
         return;
     }
 
-	for(const res of result) {
-		const {lineIndex, lineText} = res;
-		const lineRange = new Range(lineIndex, 0, lineIndex, lineText.length);
-
-		activeTextEditor.edit(editBuilder => {
+	activeTextEditor.edit(editBuilder => {
+		for(const res of result) {
+			const {lineIndex, lineText} = res;
+			const lineRange = new Range(lineIndex, 0, lineIndex, lineText.length);
+	
 			editBuilder.replace(lineRange, lineText);
-		});
-	}
+		}
+	});
 }
