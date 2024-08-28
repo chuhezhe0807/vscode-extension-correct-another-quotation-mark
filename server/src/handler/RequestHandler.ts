@@ -29,6 +29,7 @@ export type QuotationMark = {
 export type Result = {
 	lineIndex: number; // 
 	lineText: string;  // 更正完另一个引号后，需要替换的整行内容
+	oldLineText: string; // 更正之前的整行内容
 }
   
 // 修改成对的引号为单引号、双引号和反引号时更正另一个引号

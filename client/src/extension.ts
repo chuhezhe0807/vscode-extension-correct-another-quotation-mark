@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { workspace, ExtensionContext, window, TextEditor, TextDocument, WorkspaceConfiguration, Range } from 'vscode';
+import { workspace, ExtensionContext, window, TextEditor, TextDocument, WorkspaceConfiguration, Range, commands, TextDocumentChangeReason } from 'vscode';
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -21,6 +21,7 @@ let changeListener;
 let activeTextEditor: TextEditor = window.activeTextEditor;
 let activeTextEditorChangeListener;
 let workspaceConfiguration: WorkspaceConfiguration;
+let prevLineInfoBeforeCorrect: Result[]; // 上一个更正操作所在行的更正之前的信息(行号，行内容)
 const documentContentMap: Map<TextDocument, string> = new Map(); // 存储workspace中的每一个文档对象，用于onDidChangeTextDocument时获取改动之前的text
 
 export function activate(context: ExtensionContext) {
@@ -46,6 +47,13 @@ export function deactivate(): Thenable<void> | undefined {
 	}
 
 	return client.stop();
+}
+
+/**
+ * 设置 prevLineInfoBeforeCorrect 的值
+ */
+function setPrevLineInfoBeforeCorrect(lineInfo: Result[]) {
+	prevLineInfoBeforeCorrect = lineInfo;
 }
 
 /**
@@ -120,8 +128,6 @@ function setupActiveTextEditorChangeListener() {
 
 /**
  * 设置 onDidChangeTextDocument 监听事件
- * 
- * TODO 监听 undo redo 事件，并对此作出处理
  */
 function setupChangeListener() {
     if (changeListener) {
@@ -138,6 +144,18 @@ function setupChangeListener() {
         changeListener = undefined;
         return;
       }
+
+	  // 撤回操作导致的修改
+	  if(event.reason === TextDocumentChangeReason.Undo) {
+		if(prevLineInfoBeforeCorrect) {
+			applyResult(prevLineInfoBeforeCorrect, event.document, true);
+			setPrevLineInfoBeforeCorrect(undefined);
+		}
+
+		setDocContentsMap(event.document, event.document.getText());
+
+		return;
+	  }
 
       const document = event.document;
       const quotationMarks: QuotationMark[] = [];
@@ -168,6 +186,7 @@ function setupChangeListener() {
 		const sortedQuotationMarks = quotationMarks.sort((a, b) => a.lineIndex - b.lineIndex);
 		const result = await client.sendRequest(CORRECT_REQUEST_TYPE, sortedQuotationMarks);
 		applyResult(result, document);
+		setPrevLineInfoBeforeCorrect(result);
 	  }
     });
   };
@@ -176,18 +195,21 @@ function setupChangeListener() {
  * 应用更正完成另一个引号的结果
  * 
  * @param result 
+ * @param textDocument 
+ * @param useOldLineText  	是否使用 result 中的 oldLineText 进行应用结果，undo时使用
  */
-function applyResult(result: Result[], textDocument: TextDocument) {
+function applyResult(result: Result[], textDocument: TextDocument, useOldLineText = false) {
     if(!activeTextEditor || activeTextEditor.document !== textDocument) {
         return;
     }
 
 	activeTextEditor.edit(editBuilder => {
 		for(const res of result) {
-			const {lineIndex, lineText} = res;
-			const lineRange = new Range(lineIndex, 0, lineIndex, lineText.length);
+			const {lineIndex, lineText, oldLineText} = res;
+			const usedLineText = useOldLineText ? oldLineText : lineText;
+			const lineRange = new Range(lineIndex, 0, lineIndex, usedLineText.length);
 	
-			editBuilder.replace(lineRange, lineText);
+			editBuilder.replace(lineRange, usedLineText);
 		}
 	});
 }

@@ -31,8 +31,8 @@ export default class JavaScriptRequestHandler implements RequestHandler {
 			traverse(ast, {
 				Literal: (path) => {
 					this.parseLiteral(path.node, offset, lineText, quoteMark, lineIndex, result);
-				},
-				TemplateLiteral: (path) => {
+				}, 
+				TemplateLiteral: (path) => { 
 					this.parseLiteral(path.node, offset, lineText, quoteMark, lineIndex, result);
 				}
 			})
@@ -75,7 +75,7 @@ export default class JavaScriptRequestHandler implements RequestHandler {
 				quoteMark + 
 				lineText.slice(end);
 
-			result.push({lineIndex, lineText: newLineText});
+			result.push({lineIndex, lineText: newLineText, oldLineText: lineText});
 		}
 	}
 }
