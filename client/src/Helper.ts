@@ -20,7 +20,8 @@ export type QuotationMark = {
   lineIndex: number;
 	quoteMark: QuoteMarkEnum;
   lineText: string;
-  languageId: SupportedLanguageIDEnum
+  languageId: SupportedLanguageIDEnum,
+  isWantedQuoteMarkDelete: boolean;
 }
 
 export type Result = {
@@ -29,11 +30,16 @@ export type Result = {
   oldLineText: string; // 更正之前的整行内容
 }
 
+// 期望的、命中本插件工作范围的修改的类型
+type WantedContentChanges = {
+  isWantedQuoteMarkDelete: boolean;
+} & TextDocumentContentChangeEvent;
+
 // 修改成对的引号为单引号、双引号和反引号时更正另一个引号
 // 请求的参数类型为 QuotationMark[]，返回值的类型为 string，就是更正另一个引号后的整行文本对应请求参数中的 lineText
 export const CORRECT_REQUEST_TYPE = new RequestType<QuotationMark[], Result[], any>("$/correct-another-quotation");
 
-// TODO 删除空引号的后面一个时，同时删除另一个
+// 删除空引号的后面一个时，同时删除另一个
 export const DELETE_REQUEST_TYPE = new RequestType<QuotationMark[], Result[], any>("$/delete-another-quotation");
 
 /**
@@ -55,30 +61,53 @@ export const isEnabled = (configuration: WorkspaceConfiguration, languageId: str
  * 过滤出期望的修改
  * 判断条件为此次修改是不是单引号、双引号或者反引号
  * 
- * @param range 
+ * @param contentChanges 
+ * @param oldDocContentText   修改生效前的文档内容 
  */
-export const filterWantedChanges = <T extends TextDocumentContentChangeEvent> (contentChanges: readonly T[]): T[] => {
+export const filterWantedChanges = (contentChanges: readonly TextDocumentContentChangeEvent[], oldDocContentText: string): WantedContentChanges[] => {
   if(contentChanges && contentChanges.length === 0) {
     return [];
   }
 
-  let wantedChanges = [];
+  let wantedChanges: WantedContentChanges[] = [];
   const wantedChangeLineValues = [];
   for(const contentChange of contentChanges) {
     const {range, text} = contentChange;
 
-    if(!range.isEmpty && range.isSingleLine && 
-      Object.values(QuoteMarkEnum).includes(text as QuoteMarkEnum)) {
-        if(wantedChangeLineValues.includes(range.start.line)) { // 多个改动在一行中也应该排除
+    if(!range.isEmpty && range.isSingleLine) {
+      const currentLine = range.start.line;
+      // 改动为删除，在成对的空的单引号、双引号或者反引号中间删除时应该删除整对引号，初步判断
+      const isWantedQuoteMarkDelete = isDeleteOccursBetweenQuote(contentChange, oldDocContentText);
+      // 改动为单引号、双引号或者反引号
+      const isWantedQuoteMarkChange = Object.values(QuoteMarkEnum).includes(text as QuoteMarkEnum);
+
+      if(isWantedQuoteMarkDelete || isWantedQuoteMarkChange) {
+        if(wantedChangeLineValues.includes(currentLine)) { // 多个改动在一行中也应该排除
           wantedChanges = [];
           break;
         }
-        else {
-          wantedChangeLineValues.push(range.start.line);
-          wantedChanges.push(contentChange);
-        }
+        
+        wantedChanges.push({...contentChange, isWantedQuoteMarkDelete});
+        wantedChangeLineValues.push(currentLine);
+      }
     }
   }
 
   return wantedChanges;
+}
+
+/**
+ * 判断删除操作是否发生在成对的空的单引号、双引号或者反引号中间
+ * 
+ * @param contentChange 
+ * @param oldDocContentText 
+ */
+function isDeleteOccursBetweenQuote(contentChange: TextDocumentContentChangeEvent, oldDocContentText: string) {
+  const {text, rangeOffset} = contentChange;
+  const isDeleteOperation = text === "";
+  const oldContentAtOffset = oldDocContentText.at(rangeOffset);
+  const oldContentAtOffsetRight = oldDocContentText.at(rangeOffset + 1);
+
+  return isDeleteOperation && (oldContentAtOffset === oldContentAtOffsetRight) && 
+    Object.values(QuoteMarkEnum).includes(oldContentAtOffset as QuoteMarkEnum);
 }

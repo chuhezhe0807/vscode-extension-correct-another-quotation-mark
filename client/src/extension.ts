@@ -8,6 +8,7 @@ import {
 } from 'vscode-languageclient/node';
 import { 
 	CORRECT_REQUEST_TYPE, 
+	DELETE_REQUEST_TYPE, 
 	filterWantedChanges, 
 	isEnabled, 
 	QuoteMarkEnum, 
@@ -148,7 +149,7 @@ function setupChangeListener() {
 	  // 撤回操作导致的修改
 	  if(event.reason === TextDocumentChangeReason.Undo) {
 		if(prevLineInfoBeforeCorrect) {
-			applyResult(prevLineInfoBeforeCorrect, event.document, true);
+			applyResult(prevLineInfoBeforeCorrect, event.document, false, true);
 			setPrevLineInfoBeforeCorrect(undefined);
 		}
 
@@ -159,33 +160,38 @@ function setupChangeListener() {
 
       const document = event.document;
       const quotationMarks: QuotationMark[] = [];
-	  const contentChanges = filterWantedChanges(event.contentChanges);
+	  const oldDocContentText = documentContentMap.get(document);
+	  const contentChanges = filterWantedChanges(event.contentChanges, oldDocContentText);
 
       for (const change of contentChanges) {
-		const {range, text, rangeOffset} = change;
+		const {range, text, rangeOffset, isWantedQuoteMarkDelete} = change;
 		const lineIndex = range.start.line;
 		const newLineText = document.lineAt(lineIndex).text;
-		const oldDocContentText = documentContentMap.get(document);
 		const oldQuoteMark = oldDocContentText.at(rangeOffset);
 		const offset = range.start.character;
-		const oldLineText = newLineText.slice(0, offset) + oldQuoteMark + newLineText.slice(offset + 1);
+		const oldLineText = newLineText.slice(0, offset) + 
+			oldQuoteMark + 
+			(isWantedQuoteMarkDelete ? oldQuoteMark : "") +
+			newLineText.slice(offset + 1);
 
-		if(oldLineText !== newLineText) {
+		if(isWantedQuoteMarkDelete || oldLineText !== newLineText) {
 			quotationMarks.push({
 				offset,
 				lineIndex,
 				quoteMark: text as QuoteMarkEnum,
 				lineText: oldLineText,
-				languageId: document.languageId as SupportedLanguageIDEnum
+				languageId: document.languageId as SupportedLanguageIDEnum,
+				isWantedQuoteMarkDelete
 			});
 		}
       }
 
 	  if(quotationMarks.length > 0) {
+		const isDeleteOperation = quotationMarks[0].isWantedQuoteMarkDelete;
 		setDocContentsMap(document, document.getText());
 		const sortedQuotationMarks = quotationMarks.sort((a, b) => a.lineIndex - b.lineIndex);
-		const result = await client.sendRequest(CORRECT_REQUEST_TYPE, sortedQuotationMarks);
-		applyResult(result, document);
+		const result = await client.sendRequest(isDeleteOperation ? DELETE_REQUEST_TYPE : CORRECT_REQUEST_TYPE, sortedQuotationMarks);
+		applyResult(result, document, isDeleteOperation);
 		setPrevLineInfoBeforeCorrect(result);
 	  }
     });
@@ -196,9 +202,10 @@ function setupChangeListener() {
  * 
  * @param result 
  * @param textDocument 
+ * @param isDeleteOperation 是否是删除操作(从中间删除成对引号) 
  * @param useOldLineText  	是否使用 result 中的 oldLineText 进行应用结果，undo时使用
  */
-function applyResult(result: Result[], textDocument: TextDocument, useOldLineText = false) {
+function applyResult(result: Result[], textDocument: TextDocument, isDeleteOperation: boolean, useOldLineText = false) {
     if(!activeTextEditor || activeTextEditor.document !== textDocument) {
         return;
     }
@@ -207,7 +214,8 @@ function applyResult(result: Result[], textDocument: TextDocument, useOldLineTex
 		for(const res of result) {
 			const {lineIndex, lineText, oldLineText} = res;
 			const usedLineText = useOldLineText ? oldLineText : lineText;
-			const lineRange = new Range(lineIndex, 0, lineIndex, usedLineText.length);
+			// 如果是删除操作，相比于替换之前的文本少了一个字符，所以范围需要加1
+			const lineRange = new Range(lineIndex, 0, lineIndex, usedLineText.length + (isDeleteOperation ? 1 : 0));
 	
 			editBuilder.replace(lineRange, usedLineText);
 		}

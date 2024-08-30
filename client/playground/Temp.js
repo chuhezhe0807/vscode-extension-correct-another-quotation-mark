@@ -11,3 +11,10 @@ const b = `
 `;
 
 const c = "xxzzz  '' 11123";
+
+function a(param) {
+
+}
+
+a(`12312`);
+a(``);

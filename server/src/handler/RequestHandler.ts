@@ -7,7 +7,8 @@ import JavaScriptRequestHandler from './impl/JavaScriptRequestHandler';
 export const enum QuoteMarkEnum {
 	SINGLE = `'`,
 	DOUBLE = `"`,
-	BACK_QUOTE = `\``
+	BACK_QUOTE = `\``,
+	DELETE_OPERATION = ``
 }
 
 export enum SupportedLanguageIDEnum {
@@ -36,7 +37,7 @@ export type Result = {
 // 请求的参数类型为 QuotationMark[]，返回值的类型为 string，就是更正另一个引号后的整行文本对应请求参数中的 lineText
 export const CORRECT_REQUEST_TYPE = new RequestType<QuotationMark[], Result[], any>("$/correct-another-quotation");
 
-// TODO 删除空引号的后面一个时，同时删除另一个
+// 删除空引号的后面一个时，同时删除另一个
 export const DELETE_REQUEST_TYPE = new RequestType<QuotationMark[], Result[], any>("$/delete-another-quotation");
 
 /**
@@ -70,6 +71,24 @@ export const correctRequestHandler = (param: QuotationMark[]) => {
 	switch(languageId) {
 		case SupportedLanguageIDEnum.JAVA_SCRIPT:
 			return (new JavaScriptRequestHandler()).correctAnotherQuoteMark(param);
+		default:
+			return [];
+	}
+}
+
+/**
+ * 删除另一个引号的请求
+ */
+export const deleteRequestHandler = (param: QuotationMark[]) => {
+	if(param.length <= 0) {
+		return [];
+	}
+
+	const {languageId} = param[0];
+
+	switch(languageId) {
+		case SupportedLanguageIDEnum.JAVA_SCRIPT:
+			return (new JavaScriptRequestHandler()).deleteAnotherQuoteMark(param);
 		default:
 			return [];
 	}
