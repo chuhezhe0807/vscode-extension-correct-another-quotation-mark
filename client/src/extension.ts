@@ -129,6 +129,8 @@ function setupActiveTextEditorChangeListener() {
 
 /**
  * 设置 onDidChangeTextDocument 监听事件
+ * 
+ * TODO 成对的引号中间有内容时，先删除内容再删除引号不能正常删除整对引号
  */
 function setupChangeListener() {
     if (changeListener) {
@@ -149,7 +151,7 @@ function setupChangeListener() {
 	  // 撤回操作导致的修改
 	  if(event.reason === TextDocumentChangeReason.Undo) {
 		if(prevLineInfoBeforeCorrect) {
-			applyResult(prevLineInfoBeforeCorrect, event.document, false, true);
+			applyResult(prevLineInfoBeforeCorrect, event.document, prevLineInfoBeforeCorrect[0].isDeleteOperation, true);
 			setPrevLineInfoBeforeCorrect(undefined);
 		}
 
@@ -191,6 +193,7 @@ function setupChangeListener() {
 		setDocContentsMap(document, document.getText());
 		const sortedQuotationMarks = quotationMarks.sort((a, b) => a.lineIndex - b.lineIndex);
 		const result = await client.sendRequest(isDeleteOperation ? DELETE_REQUEST_TYPE : CORRECT_REQUEST_TYPE, sortedQuotationMarks);
+		result.forEach(res => res.isDeleteOperation = isDeleteOperation);
 		applyResult(result, document, isDeleteOperation);
 		setPrevLineInfoBeforeCorrect(result);
 	  }

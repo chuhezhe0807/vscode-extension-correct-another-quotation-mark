@@ -28,6 +28,7 @@ export type Result = {
   lineIndex: number; // 需要替换的整行内容的行所在行索引
   lineText: string;  // 更正完另一个引号后，需要替换的整行内容
   oldLineText: string; // 更正之前的整行内容
+  isDeleteOperation?: boolean; // 此次发送请求的更正是否是删除了引号操作
 }
 
 // 期望的、命中本插件工作范围的修改的类型
