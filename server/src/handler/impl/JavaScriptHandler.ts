@@ -1,14 +1,25 @@
 import { HandlerResult } from "vscode-languageserver";
-import {parse} from "@babel/parser"
+import {parse, ParserOptions} from "@babel/parser"
 import traverse, { Node } from "@babel/traverse"
 
 import RequestHandler, { QuotationMark, Result } from '../RequestHandler';
 
+const JAVA_SCRIPT_PARSER_OPTIONS: ParserOptions = {
+	allowImportExportEverywhere: true,
+	allowReturnOutsideFunction: true
+};
+
+const TYPE_SCRIPT_PARSER_OPTIONS: ParserOptions = {
+	allowImportExportEverywhere: true,
+	allowReturnOutsideFunction: true,
+	plugins: ["typescript"]
+};
+
 /**
- * 处理javascript的请求处理器
+ * 处理javascript和typescript的请求处理器
  */
-export default class JavaScriptRequestHandler implements RequestHandler {
-	constructor() {}
+export default class JavaScriptHandler implements RequestHandler {
+	constructor(readonly parseTypeScript = false) {}
 
 	/**
 	 * 根据传入的 QuotationMark[] 同步更正另一个引号
@@ -82,7 +93,10 @@ export default class JavaScriptRequestHandler implements RequestHandler {
 			let ast;
 			
 			try {
-				ast = parse(lineText);
+				ast = parse(
+					lineText, 
+					this.parseTypeScript ? TYPE_SCRIPT_PARSER_OPTIONS : JAVA_SCRIPT_PARSER_OPTIONS
+				);
 			}
 			catch(e) {
 				console.log(e);

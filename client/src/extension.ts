@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { workspace, ExtensionContext, window, TextEditor, TextDocument, WorkspaceConfiguration, Range, commands, TextDocumentChangeReason } from 'vscode';
+import { workspace, ExtensionContext, window, TextEditor, TextDocument, WorkspaceConfiguration, Range, TextDocumentChangeReason } from 'vscode';
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -19,14 +19,13 @@ import {
 
 let client: LanguageClient;
 let changeListener;
-let activeTextEditor: TextEditor = window.activeTextEditor;
 let activeTextEditorChangeListener;
 let workspaceConfiguration: WorkspaceConfiguration;
 let prevLineInfoBeforeCorrect: Result[]; // 上一个更正操作所在行的更正之前的信息(行号，行内容)
 const documentContentMap: Map<TextDocument, string> = new Map(); // 存储workspace中的每一个文档对象，用于onDidChangeTextDocument时获取改动之前的text
 
 export function activate(context: ExtensionContext) {
-	const doc = activeTextEditor?.document;
+	const doc = window.activeTextEditor?.document;
 	workspaceConfiguration = workspace.getConfiguration("correct-another-quotation-mark", doc?.uri);
 
 	if(isEnabled(workspaceConfiguration, doc?.languageId)) {
@@ -108,7 +107,7 @@ function setupChangeConfigurationListener() {
 		  return;
 		}
 
-		workspaceConfiguration = workspace.getConfiguration("correct-another-quotation-mark", activeTextEditor?.document.uri);
+		workspaceConfiguration = workspace.getConfiguration("correct-another-quotation-mark", window.activeTextEditor?.document.uri);
 	})
 }
 
@@ -136,7 +135,7 @@ function setupChangeListener() {
     }
 
     changeListener = workspace.onDidChangeTextDocument(async event => {
-      if (event.document !== activeTextEditor?.document) {
+      if (event.document !== window.activeTextEditor?.document) {
         return;
       }
 
@@ -148,7 +147,7 @@ function setupChangeListener() {
 
 	  // 撤回操作导致的修改
 	  if(event.reason === TextDocumentChangeReason.Undo) {
-		if(prevLineInfoBeforeCorrect) {
+		if(prevLineInfoBeforeCorrect && prevLineInfoBeforeCorrect.length > 0) {
 			applyResult(prevLineInfoBeforeCorrect, event.document, prevLineInfoBeforeCorrect[0].isDeleteOperation, true);
 			setPrevLineInfoBeforeCorrect(undefined);
 		}
@@ -209,11 +208,11 @@ function setupChangeListener() {
  * @param useOldLineText  	是否使用 result 中的 oldLineText 进行应用结果，undo时使用
  */
 function applyResult(result: Result[], textDocument: TextDocument, isDeleteOperation: boolean, useOldLineText = false) {
-    if(!activeTextEditor || activeTextEditor.document !== textDocument) {
+    if(!window.activeTextEditor || window.activeTextEditor.document !== textDocument) {
         return;
     }
 
-	activeTextEditor.edit(editBuilder => {
+	window.activeTextEditor.edit(editBuilder => {
 		for(const res of result) {
 			const {lineIndex, lineText, oldLineText} = res;
 			const usedLineText = useOldLineText ? oldLineText : lineText;

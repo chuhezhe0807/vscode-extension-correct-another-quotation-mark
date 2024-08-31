@@ -2,7 +2,7 @@ import { HandlerResult } from "vscode-languageserver";
 import { RequestType } from "vscode-languageserver";
 
 import { handleError } from './ErrorHandler';
-import JavaScriptRequestHandler from './impl/JavaScriptRequestHandler';
+import JavaScriptHandler from './impl/JavaScriptHandler';
 
 export const enum QuoteMarkEnum {
 	SINGLE = `'`,
@@ -70,7 +70,9 @@ export const correctRequestHandler = (param: QuotationMark[]) => {
 
 	switch(languageId) {
 		case SupportedLanguageIDEnum.JAVA_SCRIPT:
-			return (new JavaScriptRequestHandler()).correctAnotherQuoteMark(param);
+		case SupportedLanguageIDEnum.TYPE_SCRIPT:
+			return (new JavaScriptHandler(languageId === SupportedLanguageIDEnum.TYPE_SCRIPT))
+				.correctAnotherQuoteMark(param);
 		default:
 			return [];
 	}
@@ -88,7 +90,9 @@ export const deleteRequestHandler = (param: QuotationMark[]) => {
 
 	switch(languageId) {
 		case SupportedLanguageIDEnum.JAVA_SCRIPT:
-			return (new JavaScriptRequestHandler()).deleteAnotherQuoteMark(param);
+		case SupportedLanguageIDEnum.TYPE_SCRIPT:
+			return (new JavaScriptHandler(languageId === SupportedLanguageIDEnum.TYPE_SCRIPT))
+			.deleteAnotherQuoteMark(param);
 		default:
 			return [];
 	}

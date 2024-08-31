@@ -13,8 +13,8 @@ const b = `
 const c = "xxzzz  '' 11123";
 
 function a(param) {
-
+	return "";
 }
 
-a(`12312`);
 a(``);
+a("");

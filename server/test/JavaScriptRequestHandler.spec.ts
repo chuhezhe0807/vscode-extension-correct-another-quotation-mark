@@ -1,6 +1,6 @@
 import {expect, test, beforeAll} from "vitest";
 
-import JavaScriptRequestHandler from "../src/handler/impl/JavaScriptRequestHandler";
+import JavaScriptRequestHandler from "../src/handler/impl/JavaScriptHandler";
 import { QuoteMarkEnum, type QuotationMark } from '../src/handler/RequestHandler';
 
 let handler: JavaScriptRequestHandler;
