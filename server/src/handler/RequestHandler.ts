@@ -3,6 +3,7 @@ import { RequestType } from "vscode-languageserver";
 
 import { handleError } from './ErrorHandler';
 import JavaScriptHandler from './impl/JavaScriptHandler';
+import VueHandler from './impl/VueHandler';
 
 export const enum QuoteMarkEnum {
 	SINGLE = `'`,
@@ -14,23 +15,27 @@ export const enum QuoteMarkEnum {
 export enum SupportedLanguageIDEnum {
 	JAVA_SCRIPT = "javascript",
 	TYPE_SCRIPT = "typescript",
-	JAVA = "java"
+	VUE = "vue",
+	JSX = "jsx"
 }
 
 // 只需要考虑一行的就可以了，只有模板字符串可以换行，但是选中它的
 // 其中一个修改为单/双引号在换行情况下都是不可行的
 export type QuotationMark = {
-	offset: number;
+	offset: number;			// 修改位于lineText或者wholeText的索引
 	lineIndex: number;
 	quoteMark: QuoteMarkEnum;
   	lineText: string;
 	languageId: string;
+	wholeText?: string;		// 整个文档的内容
 }
 
 export type Result = {
-	lineIndex: number; // 
-	lineText: string;  // 更正完另一个引号后，需要替换的整行内容
-	oldLineText: string; // 更正之前的整行内容
+	lineIndex?: number;  
+	lineText?: string;  		// 更正完另一个引号后，需要替换的整行内容
+	oldLineText?: string; 		// 更正之前的整行内容
+	wholeText?: string;			// 修改后整个文档的内容，多个修改会同步到这属性中，即多个修改最终只会返回这一个属性
+	oldWholeText?: string;		// 未修改前的整个文档的内容
 }
   
 // 修改成对的引号为单引号、双引号和反引号时更正另一个引号
@@ -73,6 +78,8 @@ export const correctRequestHandler = (param: QuotationMark[]) => {
 		case SupportedLanguageIDEnum.TYPE_SCRIPT:
 			return (new JavaScriptHandler(languageId === SupportedLanguageIDEnum.TYPE_SCRIPT))
 				.correctAnotherQuoteMark(param);
+		case SupportedLanguageIDEnum.VUE:
+			return (new VueHandler).correctAnotherQuoteMark(param);
 		default:
 			return [];
 	}
@@ -93,6 +100,8 @@ export const deleteRequestHandler = (param: QuotationMark[]) => {
 		case SupportedLanguageIDEnum.TYPE_SCRIPT:
 			return (new JavaScriptHandler(languageId === SupportedLanguageIDEnum.TYPE_SCRIPT))
 			.deleteAnotherQuoteMark(param);
+		case SupportedLanguageIDEnum.VUE:
+			return (new VueHandler).deleteAnotherQuoteMark(param);
 		default:
 			return [];
 	}

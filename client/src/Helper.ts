@@ -1,4 +1,4 @@
-import {TextDocument, TextDocumentContentChangeEvent, workspace, WorkspaceConfiguration} from "vscode";
+import {TextDocumentContentChangeEvent, WorkspaceConfiguration} from "vscode";
 import { RequestType } from 'vscode-languageclient';
 
 export enum QuoteMarkEnum {
@@ -10,7 +10,8 @@ export enum QuoteMarkEnum {
 export enum SupportedLanguageIDEnum {
   JAVA_SCRIPT = "javascript",
   TYPE_SCRIPT = "typescript",
-  JAVA = "java"
+	VUE = "vue",
+	JSX = "jsx"
 }
 
 // 只需要考虑一行的就可以了，只有模板字符串可以换行，但是选中它的
@@ -22,6 +23,7 @@ export type QuotationMark = {
   lineText: string;
   languageId: SupportedLanguageIDEnum,
   isWantedQuoteMarkDelete: boolean;
+  wholeText?: string;
 }
 
 export type Result = {
@@ -29,6 +31,8 @@ export type Result = {
   lineText: string;  // 更正完另一个引号后，需要替换的整行内容
   oldLineText: string; // 更正之前的整行内容
   isDeleteOperation?: boolean; // 此次发送请求的更正是否是删除了引号操作
+  wholeText?: string;			// 修改后整个文档的内容，多个修改会同步到这属性中，即多个修改最终只会返回这一个属性
+	oldWholeText?: string;		// 未修改前的整个文档的内容
 }
 
 // 期望的、命中本插件工作范围的修改的类型

@@ -139,7 +139,13 @@ function setupChangeListener() {
         return;
       }
 
-      if (!isEnabled(workspaceConfiguration, event.document.languageId)) {
+	  const filePath = event.document.fileName;
+	  const validLanguageId = event.document.languageId === "plaintext" 
+	  	? filePath.substring(filePath.lastIndexOf(".") + 1) 
+		: event.document.languageId;
+	  const needWholeText = validLanguageId === "vue";
+
+      if (!isEnabled(workspaceConfiguration, validLanguageId)) {
         changeListener?.dispose();
         changeListener = undefined;
         return;
@@ -148,7 +154,8 @@ function setupChangeListener() {
 	  // 撤回操作导致的修改
 	  if(event.reason === TextDocumentChangeReason.Undo) {
 		if(prevLineInfoBeforeCorrect && prevLineInfoBeforeCorrect.length > 0) {
-			applyResult(prevLineInfoBeforeCorrect, event.document, prevLineInfoBeforeCorrect[0].isDeleteOperation, true);
+			applyResult(prevLineInfoBeforeCorrect, event.document, 
+				prevLineInfoBeforeCorrect[0].isDeleteOperation, true, needWholeText);
 			setPrevLineInfoBeforeCorrect(undefined);
 		}
 
@@ -173,14 +180,15 @@ function setupChangeListener() {
 			(isWantedQuoteMarkDelete ? oldQuoteMark : "") +
 			newLineText.slice(offset + 1);
 
-		if(isWantedQuoteMarkDelete || oldLineText !== newLineText) {
+		if(needWholeText || isWantedQuoteMarkDelete || oldLineText !== newLineText) {
 			quotationMarks.push({
-				offset,
+				offset: needWholeText ? rangeOffset : offset,
 				lineIndex,
 				quoteMark: text as QuoteMarkEnum,
 				lineText: oldLineText,
-				languageId: document.languageId as SupportedLanguageIDEnum,
-				isWantedQuoteMarkDelete
+				languageId: validLanguageId as SupportedLanguageIDEnum,
+				isWantedQuoteMarkDelete,
+				wholeText: needWholeText ? oldDocContentText : undefined
 			});
 		}
       }
@@ -191,7 +199,7 @@ function setupChangeListener() {
 		const result = await client.sendRequest(isDeleteOperation ? DELETE_REQUEST_TYPE : CORRECT_REQUEST_TYPE, sortedQuotationMarks);
 		result.forEach(res => res.isDeleteOperation = isDeleteOperation);
 
-		applyResult(result, document, isDeleteOperation);
+		applyResult(result, document, isDeleteOperation, false, needWholeText);
 		setPrevLineInfoBeforeCorrect(result);
 	  }
 
@@ -205,21 +213,30 @@ function setupChangeListener() {
  * @param result 
  * @param textDocument 
  * @param isDeleteOperation 是否是删除操作(从中间删除成对引号) 
- * @param useOldLineText  	是否使用 result 中的 oldLineText 进行应用结果，undo时使用
+ * @param useOldText  	是否使用 result 中的 oldLineText 进行应用结果，undo时使用
+ * @param replaceWholeText  是否需要替换掉整个text
  */
-function applyResult(result: Result[], textDocument: TextDocument, isDeleteOperation: boolean, useOldLineText = false) {
+function applyResult(result: Result[], textDocument: TextDocument, isDeleteOperation: boolean, useOldText: boolean, replaceWholeText = false) {
     if(!window.activeTextEditor || window.activeTextEditor.document !== textDocument) {
         return;
     }
 
 	window.activeTextEditor.edit(editBuilder => {
-		for(const res of result) {
-			const {lineIndex, lineText, oldLineText} = res;
-			const usedLineText = useOldLineText ? oldLineText : lineText;
-			// 如果是删除操作，相比于替换之前的文本少了一个字符，所以范围需要加1
-			const lineRange = new Range(lineIndex, 0, lineIndex, usedLineText.length + (isDeleteOperation ? 1 : 0));
-	
-			editBuilder.replace(lineRange, usedLineText);
+		if(replaceWholeText) {
+			editBuilder.replace(
+				new Range(0, 0, window.activeTextEditor.document.lineCount, 0), 
+				useOldText ? result[0].oldWholeText : result[0].wholeText
+			);
+		}
+		else {
+			for(const res of result) {
+				const {lineIndex, lineText, oldLineText} = res;
+				const usedLineText = useOldText ? oldLineText : lineText;
+				// 如果是删除操作，相比于替换之前的文本少了一个字符，所以范围需要加1
+				const lineRange = new Range(lineIndex, 0, lineIndex, usedLineText.length + (isDeleteOperation ? 1 : 0));
+		
+				editBuilder.replace(lineRange, usedLineText);
+			}
 		}
 	});
 }
