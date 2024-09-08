@@ -11,7 +11,8 @@ export enum SupportedLanguageIDEnum {
   JAVA_SCRIPT = "javascript",
   TYPE_SCRIPT = "typescript",
 	VUE = "vue",
-	JSX = "jsx"
+	JSX = "javascriptreact",
+  TSX = "typescriptreact"
 }
 
 // 只需要考虑一行的就可以了，只有模板字符串可以换行，但是选中它的

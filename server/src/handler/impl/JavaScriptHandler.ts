@@ -52,7 +52,7 @@ export default class JavaScriptHandler implements RequestHandler {
 	 * @param isDeleteOperation		是否是删除操作 
 	 * @param result 		结果数组
 	 */
-	private parseLiteral(node: Node, offset: number, lineText: string, quoteMark: string, 
+	protected parseLiteral(node: Node, offset: number, lineText: string, quoteMark: string, 
 	   lineIndex: number, isDeleteOperation: boolean, result: Result[]) {
 		// 没有添加过才进来，防止同时命中 Literal 和 TemplateLiteral
 		if(result.findIndex(res => res.lineIndex === lineIndex) !== -1) {
@@ -87,7 +87,7 @@ export default class JavaScriptHandler implements RequestHandler {
 	 * @param isDeleteOperation			是否是删除操作 
 	 * @returns 
 	 */
-	private traverse(param: QuotationMark[], result: Result[], isDeleteOperation = false) {
+	protected traverse(param: QuotationMark[], result: Result[], isDeleteOperation = false) {
 		for(const quoteMarkParam of param) {
 			const {offset, lineText, lineIndex, quoteMark} = quoteMarkParam;
 			let ast;

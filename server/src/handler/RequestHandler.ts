@@ -4,6 +4,7 @@ import { RequestType } from "vscode-languageserver";
 import { handleError } from './ErrorHandler';
 import JavaScriptHandler from './impl/JavaScriptHandler';
 import VueHandler from './impl/VueHandler';
+import ReactHandler from './impl/ReactHandler';
 
 export const enum QuoteMarkEnum {
 	SINGLE = `'`,
@@ -16,7 +17,8 @@ export enum SupportedLanguageIDEnum {
 	JAVA_SCRIPT = "javascript",
 	TYPE_SCRIPT = "typescript",
 	VUE = "vue",
-	JSX = "jsx"
+	JSX = "javascriptreact",
+	TSX = "typescriptreact"
 }
 
 // 只需要考虑一行的就可以了，只有模板字符串可以换行，但是选中它的
@@ -79,7 +81,10 @@ export const correctRequestHandler = (param: QuotationMark[]) => {
 			return (new JavaScriptHandler(languageId === SupportedLanguageIDEnum.TYPE_SCRIPT))
 				.correctAnotherQuoteMark(param);
 		case SupportedLanguageIDEnum.VUE:
-			return (new VueHandler).correctAnotherQuoteMark(param);
+			return (new VueHandler()).correctAnotherQuoteMark(param);
+		case SupportedLanguageIDEnum.JSX:
+		case SupportedLanguageIDEnum.TSX:
+			return (new ReactHandler()).correctAnotherQuoteMark(param);
 		default:
 			return [];
 	}
@@ -101,7 +106,10 @@ export const deleteRequestHandler = (param: QuotationMark[]) => {
 			return (new JavaScriptHandler(languageId === SupportedLanguageIDEnum.TYPE_SCRIPT))
 			.deleteAnotherQuoteMark(param);
 		case SupportedLanguageIDEnum.VUE:
-			return (new VueHandler).deleteAnotherQuoteMark(param);
+			return (new VueHandler()).deleteAnotherQuoteMark(param);
+		case SupportedLanguageIDEnum.JSX:
+		case SupportedLanguageIDEnum.TSX:
+			return (new ReactHandler()).deleteAnotherQuoteMark(param);
 		default:
 			return [];
 	}
