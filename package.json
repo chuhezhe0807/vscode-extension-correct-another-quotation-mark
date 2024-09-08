@@ -1,6 +1,7 @@
 {
 	"name": "correct-another-quotation-mark",
 	"description": "When you modify one of the quotation marks, synchronize the modification of the other.",
+	"displayName": "Correct another quote",
 	"author": "chuhezhe0807",
 	"license": "MIT",
 	"version": "1.0.0",
