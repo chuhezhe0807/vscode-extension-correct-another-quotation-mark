@@ -217,3 +217,39 @@ test("删除多个引号", () => {
 		{lineIndex: 3, lineText: `const a3 = ;`, oldLineText: `const a3 = "";`},
 	]);
 })
+
+test("import 语句中的引号 双引号 -> 单引号", () => {
+	const param: QuotationMark[] = [{
+		offset: 31,
+		lineIndex: 0,
+		quoteMark: QuoteMarkEnum.SINGLE,
+		lineText: `import React, {useEffect} from "react";`,
+		languageId: "javascriptreact"
+	}]
+	
+	const result = handler.correctAnotherQuoteMark(param);
+
+	expect(result).toStrictEqual([{
+		lineIndex: 0, 
+		lineText: `import React, {useEffect} from 'react';`, 
+		oldLineText: `import React, {useEffect} from "react";`
+	}]);
+})
+
+test("import 语句中的引号 单引号 -> 双引号", () => {
+	const param: QuotationMark[] = [{
+		offset: 31,
+		lineIndex: 0,
+		quoteMark: QuoteMarkEnum.DOUBLE,
+		lineText: `import React, {useEffect} from 'react';`,
+		languageId: "javascriptreact"
+	}]
+	
+	const result = handler.correctAnotherQuoteMark(param);
+
+	expect(result).toStrictEqual([{
+		lineIndex: 0, 
+		lineText: `import React, {useEffect} from "react";`, 
+		oldLineText: `import React, {useEffect} from 'react';`
+	}]);
+})

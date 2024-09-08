@@ -21,7 +21,7 @@ function LoginPage() {
       <div>
         <label>
           用户名:
-          <input type="text" name="username" opt={{a: "zzz"}} />
+          <input type='text' name="username" opt={{a: "zzz"}} />
         </label>
       </div>
       <div>
