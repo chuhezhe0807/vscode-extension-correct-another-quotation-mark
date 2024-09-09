@@ -1,5 +1,7 @@
 import { HandlerResult } from 'vscode-languageserver';
 import {parse, TemplateCompiler, compileTemplate, SFCDescriptor} from "@vue/compiler-sfc";
+// esbuild 打包时需要使用下面的路径引入
+// import {parse, TemplateCompiler, compileTemplate, SFCDescriptor} from "@vue/compiler-sfc/dist/compiler-sfc.esm-browser.js";
 import {parse as babelParse, ParserOptions} from "@babel/parser";
 import traverse, { Node } from "@babel/traverse";
 

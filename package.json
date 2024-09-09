@@ -30,8 +30,14 @@
 			"properties": {
 				"correct-another-quotation-mark.activationOnLanguage": {
 					"type": "array",
-					"default": ["javascript", "typescript", "vue", "javascriptreact", "typescriptreact"],
-					"description": "Set the languages that the extension will be activated.  e.g. [\"html\",\"xml\",\"php\"] By default, it is [\"*\"] and will be activated for all languages.",
+					"default": [
+						"javascript",
+						"typescript",
+						"vue",
+						"javascriptreact",
+						"typescriptreact"
+					],
+					"description": "Set the languages that the extension will be activated.",
 					"scope": "resource"
 				}
 			}
@@ -39,17 +45,20 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -b",
+		"compile": "npm run check-types && node esbuild.js",
+		"check-types": "tsc --noEmit",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && pnpm install && cd ../server && pnpm install && cd ..",
-		"test": "vitest --run"
+		"test": "vitest --run",
+		"package": "npm run check-types && node esbuild.js --production"
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.6",
 		"@types/node": "^18.14.6",
 		"@typescript-eslint/eslint-plugin": "^7.1.0",
 		"@typescript-eslint/parser": "^7.1.0",
+		"esbuild": "^0.23.1",
 		"eslint": "^8.57.0",
 		"mocha": "^10.3.0",
 		"typescript": "^5.3.3",
