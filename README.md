@@ -13,10 +13,6 @@ Use AST to parse the **Literal**、**TemplateLiteral** in the code, find the oth
 Supported files and they used following code parsers:
 
 - JavaScript, TypeScript, React:
-  - [@babel/parser]: https://npmmirror.com/package/@babel/parser
-
+  - @babel/parser
 - Vue
-
-  - [@vue/compiler-sfc]: https://npmmirror.com/package/@vue/compiler-sfc
-
-    
+  - @vue/compiler-sfc
