@@ -122,6 +122,12 @@ function setupActiveTextEditorChangeListener() {
 	activeTextEditorChangeListener = window.onDidChangeActiveTextEditor((editor) => {
 		if(editor) {
 			setDocContentsMap(editor.document, editor.document.getText());
+
+			// 没有 changeListener 可能是更改过 settings.json 中的配置，修改的文件不在配置项中，
+			// 导致清除了事件监听器，所以在 activeTextEditorChange 时需要校验一下监听器是否存在，如果不存在需要重新设置
+			if(!changeListener) {
+				setupChangeListener();
+			}
 		}
 	})
 }

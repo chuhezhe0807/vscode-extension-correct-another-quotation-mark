@@ -1,0 +1,8 @@
+{
+	"correct-another-quotation-mark.activationOnLanguage": [
+        "javascript",
+        "typescript",
+        "vue",
+        "javascriptreact"
+    ]
+}
